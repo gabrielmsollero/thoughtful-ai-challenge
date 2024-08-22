@@ -3,7 +3,7 @@ from robocorp.tasks import task
 from RPA.Robocorp.WorkItems import WorkItems
 from selenium import webdriver
 
-from classes.NewsScraper.reuters import NewsScraper
+from classes.NewsScraper.latimes import NewsScraper
 from classes.NewsSpreadsheet import NewsSpreadsheet
 
 logging.basicConfig(
@@ -19,14 +19,13 @@ def fetch_news_and_save_to_excel_task():
 
     try:
         search_phrase = wi.get_work_item_variable("search_phrase")
-        section = wi.get_work_item_variable("section")
         months = wi.get_work_item_variable("months")
     except KeyError:
         raise Exception(
             "One or more parameters were not provided; user should provide search_phrase (str), section (str) and months (int)"
         )
 
-    if type(search_phrase) != str or type(section) != str or type(months) != int:
+    if type(search_phrase) != str or type(months) != int:
         raise TypeError(
             "One or more parameters are not of the appropriate type; user should provide search_phrase (str), section (str) and months (int)"
         )
@@ -48,7 +47,7 @@ def fetch_news_and_save_to_excel_task():
 
     scraper = NewsScraper(driver, "output")
 
-    news = scraper.find(search_phrase, section, months)
+    news = scraper.find(search_phrase, "", months)
     logging.info(f"fetched {len(news)} news; adding to spreadsheet")
 
     spreadsheet = NewsSpreadsheet()
