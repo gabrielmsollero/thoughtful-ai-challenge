@@ -1,6 +1,6 @@
 import logging
-import os
 from robocorp.tasks import task
+from RPA.Robocorp.WorkItems import WorkItems
 from selenium import webdriver
 
 from classes.NewsScraper.reuters import NewsScraper
@@ -11,12 +11,25 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
-# TODO: money logic
-# TODO: get params from process
-
 
 @task
 def fetch_news_and_save_to_excel_task():
+    wi = WorkItems()
+    wi.get_input_work_item()
+
+    try:
+        search_phrase = wi.get_work_item_variable("search_phrase")
+        section = wi.get_work_item_variable("section")
+        months = wi.get_work_item_variable("months")
+    except KeyError:
+        raise Exception(
+            "One or more parameters were not provided; user should provide search_phrase (str), section (str) and months (int)"
+        )
+
+    if type(search_phrase) != str or type(section) != str or type(months) != int:
+        raise TypeError(
+            "One or more parameters are not of the appropriate type; user should provide search_phrase (str), section (str) and months (int)"
+        )
     # using CustomSelenium approach. RPA.core.webdriver.cache, used in the
     # given example, is deprecated so we're using selenium.webdriver instead
     # see https://stackoverflow.com/questions/78856991/importerror-cannot-import-name-cache-from-rpa-core-webdriver
@@ -26,18 +39,16 @@ def fetch_news_and_save_to_excel_task():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-extensions")
     options.add_argument("--disable-gpu")
+    options.add_argument("--disable-web-security")
     options.add_argument("--start-maximized")
+    options.add_argument("--remote-debugging-port=9222")
     options.add_experimental_option("excludeSwitches", ["enable-logging"])
 
     driver = webdriver.Chrome(options=options)
 
-    img_dir_path = os.path.abspath("./output/imgs")
-    if not os.path.exists(img_dir_path):
-        os.makedirs(os.path.abspath("./output/imgs"))
+    scraper = NewsScraper(driver, "output")
 
-    scraper = NewsScraper(driver, img_dir_path)
-
-    news = scraper.find("brazil music", "All", 36)
+    news = scraper.find(search_phrase, section, months)
     logging.info(f"fetched {len(news)} news; adding to spreadsheet")
 
     spreadsheet = NewsSpreadsheet()
