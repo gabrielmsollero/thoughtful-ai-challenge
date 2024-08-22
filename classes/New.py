@@ -1,3 +1,4 @@
+import re
 from datetime import date
 
 
@@ -17,7 +18,14 @@ class New:
         self._pic_filename = pic_filename
         self._search_phrase_count = search_phrase_count
         self._description = description
-        self._contains_money_amount = True  # TODO
+
+        money_pattern = re.compile(
+            r"\$\d{1,3}(?:,\d{3})*(?:\.\d{2})?"
+            r"|\d+(?:,\d{3})*(?:\.\d{2})?\s+(dollars|USD)"
+        )
+        self._contains_money_amount = bool(
+            money_pattern.search(f"{self._title}|{self._description or ''}")
+        )
 
     @property
     def title(self):
